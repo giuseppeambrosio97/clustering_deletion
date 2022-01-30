@@ -1,13 +1,13 @@
 import math
 from typing import Set, Tuple
 import networkx as nx
+from clustering_deletion_deleted_edge_greedy.util_exp import get_e
 
 
 class EdgeBean:
-    def __init__(self, weight: int, e0: int, e1: int, Ne0_e1: Set[int], Ne0e1: Set[int], Ne1_e0: Set[int], f: int) -> None:
+    def __init__(self, weight: int, e: Tuple[int,int], Ne0_e1: Set[int], Ne0e1: Set[int], Ne1_e0: Set[int], f: int) -> None:
         self.weight = weight
-        self.e0 = e0
-        self.e1 = e1
+        self.e = e
         self.Ne0_e1 = Ne0_e1
         self.Ne0e1 = Ne0e1
         self.Ne1_e0 = Ne1_e0
@@ -28,23 +28,23 @@ class EdgeBean:
 
     def delete_v_out_Ne0_e1_f(self, G: nx.Graph, v: int):
         self.Ne0_e1.remove(v)
-        self.f -= G[self.e0][v]["EdgeBean"].weight
+        self.f -= G[self.e[0]][v]["EdgeBean"].weight
 
     def delete_v_out_Ne1_e0_f(self, G: nx.Graph, v: int):
         self.Ne1_e0.remove(v)
-        self.f -= G[self.e1][v]["EdgeBean"].weight
+        self.f -= G[self.e[1]][v]["EdgeBean"].weight
 
     def add_v_out_Ne0_e1(self, G: nx.Graph, v: int):
         self.Ne0_e1.add(v)
-        self.f += G[self.e0][v]["EdgeBean"].weight
+        self.f += G[self.e[0]][v]["EdgeBean"].weight
 
     def add_v_out_Ne1_e0(self, G: nx.Graph, v: int):
         self.Ne1_e0.add(v)
-        self.f += G[self.e1][v]["EdgeBean"].weight
+        self.f += G[self.e[1]][v]["EdgeBean"].weight
 
     def print_EdgeBean(self):
         print("weight ", self.weight)
-        print("e0 {} e1 {}".format(self.e0, self.e1))
+        print("e0 {} e1 {}".format(self.e[0], self.e[1]))
         print("Ne0_e1 ", self.Ne0_e1)
         print("Ne0e1 ", self.Ne0e1)
         print("Ne1_e0 ", self.Ne1_e0)
@@ -54,13 +54,13 @@ class EdgeBean:
         # self.weight += edgeBean.weight
         self.Ne0e1 &= edgeBean.Ne0e1
 
-        if self.e1 == edgeBean.e1:
+        if self.e[1] == edgeBean.e[1]:
             self.Ne0_e1 &= edgeBean.Ne0_e1
             self.Ne1_e0 |= edgeBean.Ne1_e0
-        elif self.e0 == edgeBean.e0:
+        elif self.e[0] == edgeBean.e[0]:
             self.Ne1_e0 &= edgeBean.Ne1_e0
             self.Ne0_e1 |= edgeBean.Ne0_e1
-        elif self.e0 == edgeBean.e1:
+        elif self.e[0] == edgeBean.e[1]:
             self.Ne1_e0 &= edgeBean.Ne0_e1
             self.Ne0_e1 |= edgeBean.Ne1_e0
         else:
@@ -79,12 +79,12 @@ class RangedHeap:
         self.bool_fs = []
 
         for e in G.edges:
-            e = self.get_e(e[0], e[1])
+            e = get_e(e[0],e[1])
             Ne0_e1, Ne0e1, Ne1_e0 = split_neighborhood(G, e)
             val = len(Ne0_e1) + len(Ne1_e0)
             self.fs[val].add(e)
             G[e[0]][e[1]]['EdgeBean'] = EdgeBean(
-                1, e[0], e[1], Ne0_e1, Ne0e1, Ne1_e0, val)
+                1, e, Ne0_e1, Ne0e1, Ne1_e0, val)
 
         for id, id_map in enumerate(self.fs):
             if len(id_map) != 0:
@@ -134,49 +134,37 @@ class RangedHeap:
     #     self.fs[self.bool_fs[0]].remove(edge_to_pick)
     #     return edge_to_pick
 
-    def delete_e(self, e0, e1, f):
-        e = self.get_e(e0, e1)
+    def delete_e(self, e, f):
         self.fs[f].remove(e)
         self.size -= 1
 
         if len(self.fs[f]) == 0:
             self.binary_search_delete(f)
 
-    def delete_e_old(self, e0, e1, old_f):
-        e = self.get_e(e0, e1)
-        self.fs[old_f].remove(e)
-        self.size -= 1
-
-        if len(self.fs[old_f]) == 0:
-            self.binary_search_delete(old_f)
-
-    def add(self, e0, e1, f):
-        e = self.get_e(e0, e1)
+    def add(self, e, f):
         if len(self.fs[f]) == 0:
             self.binary_search_add(f)
         self.fs[f].add(e)
         self.size += 1
 
-    def adjust(self, G, e0, e1):
-        edgeBean = G[e0][e1]['EdgeBean']
+    def adjust(self, edgeBean):
+        self.fs[edgeBean.old_f].remove(edgeBean.e)
 
-        old_f = edgeBean.old_f
-        self.delete_e_old(e0, e1, old_f)
+        if len(self.fs[edgeBean.old_f]) == 0:
+            self.binary_search_delete(edgeBean.old_f)
+            
+        if len(self.fs[edgeBean.f]) == 0:
+            self.binary_search_add(edgeBean.f)
 
-        f = edgeBean.f
-
-        self.add(e0, e1, f)
+        self.fs[edgeBean.f].add(edgeBean.e)
 
         edgeBean.adjust_f()
 
-    def merge_and_add(self, G, edge1, edge2):
-        edgeBean1 = G[edge1[0]][edge1[1]]['EdgeBean']
-        edgeBean2 = G[edge2[0]][edge2[1]]['EdgeBean']
-
-        self.delete_e(edge2[0], edge2[1], edgeBean2.f)
+    def merge_and_add(self, G, edgeBean1, edgeBean2):
+        self.delete_e(edgeBean2.e, edgeBean2.f)
 
         if edgeBean1.merge(edgeBean2, G):
-            self.adjust(G, edge1[0], edge1[1])
+            self.adjust(edgeBean1)
 
     def binary_search_delete(self, x):
         l = 0
@@ -213,9 +201,6 @@ class RangedHeap:
                 else:
                     r = c - 1
             self.bool_fs.insert(c+1, x)
-
-    def get_e(self, e0, e1):
-        return (e0, e1) if e0 < e1 else (e1, e0)
 
     def print_fs(self):
         for id, id_map in enumerate(self.fs):
@@ -267,45 +252,50 @@ def f_with_edgeBean(edgeBean: EdgeBean, G: nx.Graph) -> int:
     value = 0
 
     for node in edgeBean.Ne0_e1:  # removed
-        value += G[edgeBean.e0][node]['EdgeBean'].weight
+        value += G[edgeBean.e[0]][node]['EdgeBean'].weight
 
     for node in edgeBean.Ne1_e0:  # removed
-        value += G[edgeBean.e1][node]['EdgeBean'].weight
+        value += G[edgeBean.e[1]][node]['EdgeBean'].weight
 
     return value
 
 
-def edge_contraction(G, e_edgeBean: EdgeBean, rangedHeap: RangedHeap):
-    e = (e_edgeBean.e0, e_edgeBean.e1)
-    Ne0_e1, Ne0e1, Ne1_e0 = e_edgeBean.Ne0_e1, e_edgeBean.Ne0e1, e_edgeBean.Ne1_e0
+def edge_contraction(G, egBean: EdgeBean, rangedHeap: RangedHeap):
+    for node in egBean.Ne0_e1:  # removed
+        edgeBean = G[egBean.e[0]][node]["EdgeBean"]
+        rangedHeap.delete_e(edgeBean.e, edgeBean.f)
 
-    for node in Ne0_e1:  # removed
-        rangedHeap.delete_e(e[0], node, G[e[0]][node]["EdgeBean"].f)
-
-    for node in Ne1_e0:  # removed
-        rangedHeap.delete_e(e[1], node, G[e[1]][node]["EdgeBean"].f)
+    for node in egBean.Ne1_e0:  # removed
+        edgeBean = G[egBean.e[1]][node]["EdgeBean"]
+        rangedHeap.delete_e(edgeBean.e, edgeBean.f)
 
     toAdjust_in_rangedHeap = set()
 
-    adjust_edge_Ne0e1(G, e[0], e[1], Ne0e1, Ne0_e1,
-                      Ne1_e0, toAdjust_in_rangedHeap)
-    adjust_edge_Ne0_e1(G, e[0], Ne0_e1, Ne0e1, toAdjust_in_rangedHeap)
-    adjust_edge_Ne1_e0(G, e[1], Ne1_e0, Ne0e1, toAdjust_in_rangedHeap)
+    adjust_edge_Ne0e1(G, egBean.e[0], egBean.e[1], 
+                      egBean.Ne0e1, egBean.Ne0_e1,
+                      egBean.Ne1_e0, toAdjust_in_rangedHeap)
+    adjust_edge_Ne0_e1(G, egBean.e[0], egBean.Ne0_e1,
+                       egBean.Ne0e1, toAdjust_in_rangedHeap)
+    adjust_edge_Ne1_e0(G, egBean.e[1], egBean.Ne1_e0, 
+                       egBean.Ne0e1, toAdjust_in_rangedHeap)
 
-    for node in Ne0e1:
-        G[e[0]][node]['EdgeBean'].weight += G[e[1]][node]['EdgeBean'].weight
+    for node in egBean.Ne0e1:
+        G[egBean.e[0]][node]['EdgeBean'].weight += G[egBean.e[1]][node]['EdgeBean'].weight
 
-    for node in Ne0e1:
-        rangedHeap.merge_and_add(G, (e[0], node), (e[1], node))
+    for node in egBean.Ne0e1:
+        edgeBean1 = G[egBean.e[0]][node]["EdgeBean"]
+        edgeBean2 = G[egBean.e[1]][node]["EdgeBean"]
+        rangedHeap.merge_and_add(G, edgeBean1, edgeBean2)
 
     for edge in toAdjust_in_rangedHeap:
-        rangedHeap.adjust(G, edge[0], edge[1])
+        edgeBean = G[edge[0]][edge[1]]["EdgeBean"]
+        rangedHeap.adjust(edgeBean)
 
-    for node in Ne0_e1:  # removed
-        G.remove_edge(e[0], node)
+    for node in egBean.Ne0_e1:  # removed
+        G.remove_edge(egBean.e[0], node)
 
-    G.nodes[e[0]]["clique"] |= G.nodes[e[1]]["clique"]
-    G.remove_node(e[1])
+    G.nodes[egBean.e[0]]["clique"] |= G.nodes[egBean.e[1]]["clique"]
+    G.remove_node(egBean.e[1])
 
 
 def adjust_edge_Ne0_e1(G: nx.Graph, e0: int, Ne0_e1: Set[int], Ne0e1: Set[int], toAdjust_in_rangedHeap: Set[Tuple[int, int]]):
@@ -326,7 +316,7 @@ def adjust_edge_Ne0_e1(G: nx.Graph, e0: int, Ne0_e1: Set[int], Ne0e1: Set[int], 
             if other in Ne0_e1 or other in Ne0e1:                       # A - A or A - B
                 edgeBean.delete_v_in(e0)
             else:                                                       # A - C or A - ext
-                if edgeBean.e0 == a:
+                if edgeBean.e[0] == a:
                     edgeBean.delete_v_out_Ne0_e1_f(G, e0)
                 else:
                     edgeBean.delete_v_out_Ne1_e0_f(G, e0)
@@ -349,7 +339,7 @@ def adjust_edge_Ne0e1(G: nx.Graph, e0: int, e1: int, Ne0e1: Set[int], Ne0_e1: Se
             edgeBean = G[edge[0]][edge[1]]["EdgeBean"]
 
             if other in Ne0_e1:                                         # B - A
-                if edgeBean.e0 == b:
+                if edgeBean.e[0] == b:
                     edgeBean.delete_v_out_Ne0_e1(e1)
                     edgeBean.add_v_out_Ne0_e1(G, e0)
                 else:
@@ -362,7 +352,7 @@ def adjust_edge_Ne0e1(G: nx.Graph, e0: int, e1: int, Ne0e1: Set[int], Ne0_e1: Se
                 edgeBean.f += G[e1][b]["EdgeBean"].weight
                 toAdjust_in_rangedHeap.add(edge)
             else:                                                       # B - ext
-                if edgeBean.e0 == b:
+                if edgeBean.e[0] == b:
                     edgeBean.delete_v_out_Ne0_e1(e1)
                 else:
                     edgeBean.delete_v_out_Ne1_e0(e1)
@@ -385,7 +375,7 @@ def adjust_edge_Ne1_e0(G: nx.Graph, e1: int, Ne1_e0: Set[int], Ne0e1: Set[int], 
             if other in Ne0e1 or other in Ne1_e0:                   # C - B or C - C
                 edgeBean.delete_v_in(e1)
             else:                                                   # C - A or C - ext
-                if edgeBean.e0 == c:
+                if edgeBean.e[0] == c:
                     edgeBean.delete_v_out_Ne0_e1_f(G, e1)
                 else:
                     edgeBean.delete_v_out_Ne1_e0_f(G, e1)

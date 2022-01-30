@@ -26,8 +26,8 @@ def read_dataset(directory: str) -> List[str]:
     return files
 
 
-def get_e(e: Tuple[Any, Any]) -> Tuple[Any, Any]:
-    return (e[0], e[1]) if e[0] < e[1] else (e[1], e[0])
+def get_e(e0: Any, e1: Any) -> Tuple[Any, Any]:
+    return (e0, e1) if e0 < e1 else (e1, e0)
 
 
 def check_solution(G: nx.Graph, G_sol: nx.Graph, val: int) -> bool:
