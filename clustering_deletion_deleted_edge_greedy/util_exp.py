@@ -1,12 +1,23 @@
 import os
-import pandas as pd
+from typing import Any, List, Tuple
 import networkx as nx
-from clustering_deletion_deleted_edge_greedy.random_edge_greedy import k_clustering_deletion_random_edge_contraction
-import time
-import matplotlib.pyplot as plt
 
 
-def read_dataset(directory):
+def read_graph(dataset: str) -> nx.Graph:
+    file = open(dataset, 'r')
+
+    G = nx.Graph()
+    for row in file:
+        if row[0] != '#':
+            edge_str = row.rstrip('\n')
+            edge_pair = edge_str.split(" ")
+            if len(edge_pair) >= 2:
+                G.add_edge(int(edge_pair[0]), int(edge_pair[1]))
+
+    return G
+
+
+def read_dataset(directory: str) -> List[str]:
     files = os.listdir(directory)
 
     for i in range(len(files)):
@@ -15,71 +26,36 @@ def read_dataset(directory):
     return files
 
 
-def getGraphs(datasets):
-    graphs = []
-    for ds in datasets.values():
-        # G = nx.read_edgelist(ds, create_using=nx.Graph(), nodetype=str)
-        G = read_graph(ds)
-        nx.set_edge_attributes(G, 1, 'weight')
-        graphs.append(G)
-    return graphs
+def get_e(e: Tuple[Any, Any]) -> Tuple[Any, Any]:
+    return (e[0], e[1]) if e[0] < e[1] else (e[1], e[0])
 
 
-def experiments_dir(datasets_dir, algorithms):
-    datasets = read_dataset(datasets_dir)
-    experiments(datasets, algorithms)
+def check_solution(G: nx.Graph, G_sol: nx.Graph, val: int) -> bool:
 
+    cliques = []
+    n_nodes = 0
 
-def experiments(datasets, algorithms):
-    dataset_name = list(datasets.keys())
-    algorithms_name = list(algorithms.keys())
+    for node in G_sol.nodes:
+        clique = G_sol.nodes[node]["clique"]
+        n_nodes += len(clique)
+        cliques.append(clique)
 
-    graphs = getGraphs(datasets)
+    if n_nodes != len(G.nodes):
+        return "Il numero dei nodi non coincide"
 
-    for i in range(len(graphs)):
-        n = len(graphs[i].nodes)
-        m = len(graphs[i].edges)
-        dataset_name[i] = dataset_name[i] + \
-            "\n|V|=" + str(n) + "\n|E|=" + str(m)
+    def isClique(G, clique):
+        for i in range(len(clique)):
+            for j in range(i+1, len(clique)):
+                if not G.has_edge(clique[i], clique[j]):
+                    return False
+                else:
+                    G.remove_edge(clique[i], clique[j])
+        return True
 
-    df_value = pd.DataFrame(columns=algorithms_name, index=dataset_name)
-    df_time = pd.DataFrame(columns=algorithms_name, index=dataset_name)
-    df_solution = pd.DataFrame(columns=algorithms_name, index=dataset_name)
-
-    for alg_name, alg in algorithms.items():
-        for i in range(len(graphs)):
-            print("************************************************************")
-            print("exec alg: ", alg_name, " on ds: \n", dataset_name[i] + "\n")
-            print("************************************************************")
-            start_k = time.time()
-            res = k_clustering_deletion_random_edge_contraction(
-                graphs[i], 1, choice_method=alg
-            )
-            end_k = time.time() - start_k
-            df_value.at[dataset_name[i], alg_name] = res[0]
-            df_time.at[dataset_name[i], alg_name] = end_k
-            df_solution.at[dataset_name[i], alg_name] = res[1]
-
-    return df_value, df_time, df_solution
-
-
-def plot_data_frame(df, title):
-    ax = plt.gca()
-    g = df.plot(style='.-', ax=ax)
-    plt.legend(loc='upper right')
-    g.set_title(title, color='black')
-    g.legend(bbox_to_anchor=(1.0, 1.0))
-    plt.subplots_adjust(right=0.7)
-    plt.show()
-
-
-def read_graph(dataset):
-    file = open(dataset, 'r')
-
-    G = nx.Graph()
-    for row in file:
-        edge_str = row.rstrip('\n')
-        edge_pair = edge_str.split(" ")
-        G.add_edge(edge_pair[0], edge_pair[1])
-
-    return G
+    for clique in cliques:
+        if not isClique(G, list(clique)):
+            return "L'insieme di vertici {} non è una clique nel grafo di input".format(clique)
+    if val == len(G.edges):
+        return True
+    else:
+        return "val = {} ed è diverso dal numero di edge rimanenti {} se eliminate le clique ".format(val, len(G.edges))
