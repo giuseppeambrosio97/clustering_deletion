@@ -1,7 +1,7 @@
 import networkx as nx
 import time
 import pandas as pd
-from deleted_edge_greedy.util_exp import read_graph, check_solution,read_dataset
+from heuristic_algorithm.utils.util_exp import read_graph, check_solution,read_dataset
 from deleted_edge_greedy.deleted_edge_greedy import deleted_edge_greedy
 if __name__ == "__main__":
 

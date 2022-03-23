@@ -1,6 +1,6 @@
 import networkx as nx
 import time
-from deleted_edge_greedy.util_exp import read_graph, check_solution
+from heuristic_algorithm.utils.util_exp import read_graph, check_solution
 from deleted_edge_greedy.deleted_edge_greedy import deleted_edge_greedy
 if __name__ == "__main__":
 
