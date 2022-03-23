@@ -1,7 +1,7 @@
 import math
 from typing import Set, Tuple
 import networkx as nx
-from clustering_deletion_deleted_edge_greedy.util_exp import get_e
+from deleted_edge_greedy.util_exp import get_e
 
 
 class EdgeBean:

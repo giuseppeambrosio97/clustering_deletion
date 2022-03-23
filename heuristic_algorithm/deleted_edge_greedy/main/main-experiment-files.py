@@ -1,7 +1,7 @@
 import networkx as nx
 import time
-from clustering_deletion_deleted_edge_greedy.util_exp import read_graph, check_solution
-from clustering_deletion_deleted_edge_greedy.deleted_edge_greedy import deleted_edge_greedy
+from deleted_edge_greedy.util_exp import read_graph, check_solution
+from deleted_edge_greedy.deleted_edge_greedy import deleted_edge_greedy
 if __name__ == "__main__":
 
     datasets = [
