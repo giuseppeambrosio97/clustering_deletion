@@ -1,5 +1,6 @@
-#!/bin/sh
-conda create --prefix ./env
-conda activate $(pwd)/env
-conda install --file requirements.txt
+#!/bin/bash
+python -m pip install --upgrade pip
+pip install virtualenv
+python -m venv venv
+source venv/bin/activate
 pip install -e .
