@@ -1,7 +1,11 @@
 FROM python:3.9.5
 
-COPY ./install_env.sh .
-RUN bash install_env.sh
+WORKDIR /application/heuristic_algorithm
 
-WORKDIR /application/
-# ENTRYPOINT ["python", ".py"]
+COPY ./requirements.txt .
+COPY ./setup.py .
+COPY ./heuristic_algorithm ./heuristic_algorithm
+
+RUN pip install -e .
+
+ENTRYPOINT ["python", "heuristic_algorithm/deleted_edge_greedy/main/main-esempio-tesi.py"]
