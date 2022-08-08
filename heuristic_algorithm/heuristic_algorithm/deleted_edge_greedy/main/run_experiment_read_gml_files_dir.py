@@ -1,3 +1,16 @@
+"""
+    This module can be used to run a the deleted_edge_greedy heuristic on all datasets contained
+    in an input directory with the .gml format.
+
+    How you can use it?
+        - Make sure you are in the clustering_deletion/heuristic_algorithm directory.
+        - Run the module with the appropriate parameters.
+    e.g.
+    python -u heuristic_algorithm/deleted_edge_greedy/main/run_experiment_read_gml_files_dir.py  \
+              --dirname_in='/home/peppe/Scrivania/git_repo/clustering_deletion/data/exp/inputs/BA_instances_22m06d17/' \
+             --filename_out='/home/giambrosio/per_git/clustering_deletion/data/exp/outputs/BA_instances_22m06d17.csv'
+"""
+
 import time
 
 import fire
@@ -8,15 +21,6 @@ from heuristic_algorithm.utils.util_exp import read_dataset
 from heuristic_algorithm.utils.check_solution import check_solution
 import tqdm
 
-"""
-    This module can be used to run a the deleted_edge_greedy heuristic on all datasets contained in an input directory
-    with the .gml format.
-
-    How you can use it? run the module with the appropriate parameters.
-    python -u heuristic_algorithm/heuristic_algorithm/deleted_edge_greedy/main/run_experiment_read_gml_files_dir.py  \
-              --dirname_in='/home/giambrosio/per_git/clustering_deletion/data/exp/inputs/BA_instances_22m06d17/'     \
-              --filename_out='/home/giambrosio/per_git/clustering_deletion/data/exp/outputs/BA_instances_22m06d17.csv'
-"""
 
 def run_experiment_read_gml_dir(dirname_in: str, filename_out: str) -> None:
     """
