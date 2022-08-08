@@ -1,9 +1,11 @@
-# clustering_deletion_heuristic_algorithm
+# CLUSTERING DELETION HEURISTIC ALGORITHM
 
-## run on pc
-- create the virtual environment (you can use the script install_env.sh to do it).
+## Run on pc ##
 
-## run with docker
+create the virtual environment (you can use the script install_env.sh to do it).
+
+## Run with docker ##
+
 ```console
 docker build -t heuristic_algorithm .
 docker run heuristic_algorithm
