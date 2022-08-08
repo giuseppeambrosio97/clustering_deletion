@@ -1,7 +1,9 @@
 import networkx as nx
 import time
-from heuristic_algorithm.utils.util_exp import read_graph, check_solution
-from deleted_edge_greedy.deleted_edge_greedy import deleted_edge_greedy
+from heuristic_algorithm.utils.util_exp import read_graph
+from heuristic_algorithm.utils.check_solution import check_solution
+from heuristic_algorithm.deleted_edge_greedy.deleted_edge_greedy import deleted_edge_greedy
+
 if __name__ == "__main__":
 
     datasets = [
